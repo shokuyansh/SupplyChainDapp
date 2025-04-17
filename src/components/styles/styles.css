@@ -1,0 +1,147 @@
+/* src/components/styles/styles.css */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #f5f5f5; /* Light gray background */
+    color: #333; /* Dark text for contrast */
+    font-family: 'Poppins', sans-serif; /* Clean font */
+    min-height: 100vh; /* Full height */
+}
+
+.app-container {
+    max-width: 1200px; /* Center the content */
+    margin: 0 auto; /* Center horizontally */
+    padding: 20px; /* Add padding */
+}
+
+/* Header Styles */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #2d3436; /* Dark header */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+header h1 {
+    color: #ffffff; /* White text */
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Button Styles */
+button {
+    background: #0984e3; /* Primary button color */
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0873c4; /* Darker shade on hover */
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+    width: 90%; /* Responsive width */
+    max-width: 500px; /* Max width */
+}
+
+.modal-header {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.modal-content {
+    margin-bottom: 1rem;
+}
+
+/* Section Container Styles */
+.section-container {
+    background: #ffffff; /* White background */
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.section-container:hover {
+    transform: translateY(-3px); /* Lift effect on hover */
+}
+
+/* Input Styles */
+input {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    width: 100%; /* Full width */
+}
+
+input:focus {
+    outline: none;
+    border-color: #0984e3; /* Highlight border */
+    box-shadow: 0 0 0 2px rgba(9, 132, 227, 0.2);
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f0f0f0; /* Light gray for header */
+}
+
+/* Result Container Styles */
+.result-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa; /* Light background for results */
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    padding: 1rem;
+    background: #2d3436; /* Dark footer */
+    color: white;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
