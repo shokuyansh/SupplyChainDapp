@@ -20,7 +20,7 @@ export const getWeb3State = async ()=>{
     //provider is used for reading contract
     const signer = await provider.getSigner()
     //signer is used for writing
-    const contractAddress = "0x1a34A51EE4a7bFa66fD57429ebC0A9abA4286664"
+    const contractAddress = "0x8d88ec8f6aa7fd2f0e377a37c78f3e6d708db978"
 
     
     // await signer.signMessage("Welcome , ab kya lund chusu tera");    

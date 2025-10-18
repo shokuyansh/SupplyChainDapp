@@ -3,7 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getWeb3State } from "../utils/getWeb3State";
 
-// Import new role-based components
+
 import FarmerActions from "./FarmerActions";
 import DistributorActions from "./DistributorActions";
 import RetailerActions from "./RetailerActions";
@@ -58,7 +58,7 @@ const Home = () => {
         <div style={{ minHeight: '100vh', padding: '20px', background: '#fcfcfc' }}>
             {/* Header */}
             <div style={headerStyle}>
-                <h1>🚜 AgriChain DApp (Escrow Model)</h1>
+                <h1>🚜 AgriChain DApp</h1>
                 <button onClick={handleWallet} style={walletButtonStyle}>
                     {selectedAccount ? `${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}` : "Connect Wallet"}
                 </button>

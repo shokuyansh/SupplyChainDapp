@@ -33,7 +33,7 @@ contract AgriChainEscrow {
         
         address payable farmer;
         address distributor;
-        address payable retailer; // Must be payable to receive refund
+        address payable retailer; 
         
         uint price;
         BatchStatus status;
@@ -89,7 +89,7 @@ contract AgriChainEscrow {
         string memory _farmLocation,
         string memory _ipfsHash,
         address _distributor,
-        address payable _retailer, // Retailer must be payable
+        address payable _retailer, 
         uint _price,
         bytes32[] calldata _itemSerialHashes
     ) external {
@@ -110,7 +110,7 @@ contract AgriChainEscrow {
         newBatch.retailer = _retailer;
         newBatch.price = _price;
         newBatch.status = BatchStatus.HARVESTED;
-        // isFunded and isPaid default to false
+        
 
         for (uint i = 0; i < _itemSerialHashes.length; i++) {
             bytes32 serialHash = _itemSerialHashes[i];
