@@ -1,110 +1,275 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-contract Tracking{
-    enum ShipmentStatus{PENDING,IN_TRANSIT,DELIVERED}
-    
-    struct Shipment{
-        address sender;
-        address reciever;
-        uint pickupTime;
-        uint deliveryTime;
-        uint price;
-        uint distance;
-        ShipmentStatus status;
-        bool isPaid;
+/**
+ * @title AgriChain Escrow Contract
+ * @dev Implements a secure escrow model for the agricultural supply chain.
+ * @dev Farmer -> Distributor -> Retailer (who funds and confirms)
+ */
+contract AgriChainEscrow {
+
+    // --- STATE VARIABLES ---
+
+    uint public batchCount;
+
+    // Enums for tracking status
+    enum BatchStatus { 
+        HARVESTED,  // Farmer created
+        FUNDED,     // Retailer locked payment
+        PICKED_UP,  // Distributor has goods
+        DELIVERED,  // Retailer confirmed, Farmer paid
+        DENIED,     // Retailer denied delivery
+        REFUNDED    // Farmer approved refund
     }
-    mapping(address=>Shipment[]) shipments;
-    uint public shipmentCount;
-
-
-    struct typeShipment{
-        uint256 index;
-        address sender;
-        address reciever;
-        uint pickupTime;
-        uint deliveryTime;
-        uint price;
-        uint distance;
-        ShipmentStatus status;
-        bool isPaid;
-    }
-    typeShipment[] public typeshipments;
-
-    event ShipmentCreated(uint256 SID,address indexed sender,address indexed reciever,
-    uint distance,uint price);
-    event ShipmentInTransit(address indexed sender,address indexed reciever,
-    uint pickupTime);
-    event ShipmentDelivered(address indexed sender,address indexed reciever,
-    uint deliveryTime);
-    event ShipmentPaid(address indexed sender,address indexed reciever,
-    uint amount);
     
-    
-    
-    function createShipment(address _reciever,uint _distance,uint _price) external payable {
-        require(msg.value== _price,"Payment Amount must match the price!");
-        require(msg.sender!=_reciever,"Cannot ship to oneself");
-        require(_distance>0,"distance should be greater than 0");
-        require(_price>0,"Price cannot be zero");
-        Shipment memory shipment = Shipment(msg.sender,_reciever,0,0,_price,_distance,ShipmentStatus.PENDING,false);
-        typeshipments.push(typeShipment(shipments[msg.sender].length,msg.sender,_reciever,0,0,_price,_distance,ShipmentStatus.PENDING,false));
-        shipments[msg.sender].push(shipment);
-        emit ShipmentCreated(shipmentCount,msg.sender, _reciever, _distance, _price);
-        shipmentCount++;
+    enum ItemStatus { PENDING, ACTIVE, CONSUMED }
+
+    struct Batch {
+        uint batchId;
+        string produceName;
+        string farmLocation;
+        string ipfsHash;
+        uint harvestTimestamp;
         
+        address payable farmer;
+        address distributor;
+        address payable retailer; // Must be payable to receive refund
+        
+        uint price;
+        BatchStatus status;
+        bool isFunded; // True when escrow is filled
+        bool isPaid;   // True when farmer is paid
+        
+        uint pickupTimestamp;
+        uint deliveryTimestamp;
     }
 
-    function startShipment(address _reciever,uint _sid) external{
-        typeShipment storage typeshipment = typeshipments[_sid];
-        require(typeshipment.sender==msg.sender,"Not the shipment Sender!");
-        uint _index=typeshipment.index;
-        address _sender=msg.sender;
-        Shipment storage shipment = shipments[_sender][_index];
-        require(shipment.reciever==_reciever,"Invalid Reciever Address!");
-        require(shipment.status==ShipmentStatus.PENDING,"Shipment already in transit");
-        shipment.status=ShipmentStatus.IN_TRANSIT;
-        typeshipment.status=ShipmentStatus.IN_TRANSIT;
-        shipment.pickupTime=block.timestamp;
-        typeshipment.pickupTime=block.timestamp;
-        emit ShipmentInTransit(_sender, _reciever, shipment.pickupTime);
+    struct Item {
+        uint batchId;
+        ItemStatus status;
+        bool isRegistered;
+    }
+
+    // Mappings
+    mapping(uint => Batch) public batches;
+    mapping(bytes32 => Item) public allItems;
+    Batch[] public allBatchesArray;
+
+    // --- EVENTS ---
+
+    event BatchCreated(uint indexed batchId, address indexed farmer, address retailer, string produceName);
+    event BatchFunded(uint indexed batchId, address indexed retailer, uint amount);
+    event DistributorPickup(uint indexed batchId);
+    event DeliveryConfirmed(uint indexed batchId, address indexed farmer, uint amount);
+    event DeliveryDenied(uint indexed batchId, address indexed retailer);
+    event RefundApproved(uint indexed batchId, address indexed retailer, uint amount);
+    event ItemConsumed(bytes32 indexed serialHash);
+    
+    // --- MODIFIERS ---
+
+    modifier onlyFarmer(uint _batchId) {
+        require(msg.sender == batches[_batchId].farmer, "Caller is not the farmer");
+        _;
     }
     
-    function completeShipment(address _reciever,uint _sid) external {
-        require(_sid<shipmentCount,"Invalid Shipment ID!");
-        typeShipment storage typeshipment = typeshipments[_sid];
-        require(typeshipment.sender==msg.sender,"Not the shipment Sender!");
-        address _sender=msg.sender;
-        uint _index=typeshipment.index;
-        Shipment storage shipment = shipments[_sender][_index];
-        require(shipment.reciever==_reciever,"INvalid Reciever Address!");
-        require(shipment.status==ShipmentStatus.IN_TRANSIT,"Shipment in-transit");
-        require(shipment.isPaid==false,"Shipment is already paid!");
-        shipment.status=ShipmentStatus.DELIVERED;
-        typeshipment.status=ShipmentStatus.DELIVERED;
-        shipment.isPaid=true;
-        typeshipment.isPaid=true;
-        shipment.deliveryTime=block.timestamp;
-        typeshipment.deliveryTime=block.timestamp;
-        payable(_sender).transfer(shipment.price);
+    modifier onlyDistributor(uint _batchId) {
+        require(msg.sender == batches[_batchId].distributor, "Caller is not the distributor");
+        _;
+    }
 
-        emit ShipmentDelivered(_sender,_reciever, shipment.deliveryTime);
-        emit ShipmentPaid(_sender,_reciever, shipment.price);
+    modifier onlyRetailer(uint _batchId) {
+        require(msg.sender == batches[_batchId].retailer, "Caller is not the retailer");
+        _;
+    }
+
+    // --- FUNCTIONS (FARMER ROLE) ---
+
+    function createBatch(
+        string memory _produceName,
+        string memory _farmLocation,
+        string memory _ipfsHash,
+        address _distributor,
+        address payable _retailer, // Retailer must be payable
+        uint _price,
+        bytes32[] calldata _itemSerialHashes
+    ) external {
+        require(_distributor != address(0) && _retailer != address(0), "Invalid addresses");
+        require(_price > 0, "Price must be greater than zero");
+        require(_itemSerialHashes.length > 0, "Must register at least one item");
+
+        uint batchId = batchCount;
+
+        Batch storage newBatch = batches[batchId];
+        newBatch.batchId = batchId;
+        newBatch.produceName = _produceName;
+        newBatch.farmLocation = _farmLocation;
+        newBatch.ipfsHash = _ipfsHash;
+        newBatch.harvestTimestamp = block.timestamp;
+        newBatch.farmer = payable(msg.sender);
+        newBatch.distributor = _distributor;
+        newBatch.retailer = _retailer;
+        newBatch.price = _price;
+        newBatch.status = BatchStatus.HARVESTED;
+        // isFunded and isPaid default to false
+
+        for (uint i = 0; i < _itemSerialHashes.length; i++) {
+            bytes32 serialHash = _itemSerialHashes[i];
+            require(!allItems[serialHash].isRegistered, "Serial number already exists");
+            allItems[serialHash] = Item(batchId, ItemStatus.PENDING, true);
+        }
+
+        allBatchesArray.push(newBatch);
+        emit BatchCreated(batchId, msg.sender, _retailer, _produceName);
+        batchCount++;
+    }
+
+    /**
+     * @dev Farmer's action to approve a refund for a DENIED batch.
+     */
+    function approveRefund(uint _batchId) external onlyFarmer(_batchId) {
+        Batch storage batch = batches[_batchId];
+        require(batch.status == BatchStatus.DENIED, "Batch was not denied");
+        require(batch.isFunded, "Batch was not funded");
+        
+        batch.isFunded = false;
+        batch.status = BatchStatus.REFUNDED;
+        
+        // Update array copy
+        allBatchesArray[_batchId] = batch;
+
+        (bool success, ) = batch.retailer.call{value:batch.price}("");
+        require(success, "Refund transfer failed");
+
+        emit RefundApproved(_batchId, batch.retailer, batch.price);
+    }
+
+    // --- FUNCTIONS (DISTRIBUTOR ROLE) ---
+
+    function confirmPickupByDistributor(uint _batchId) external onlyDistributor(_batchId) {
+        Batch storage batch = batches[_batchId];
+        // Farmer should not release goods until batch is funded
+        require(batch.status == BatchStatus.FUNDED, "Batch not funded by retailer");
+        
+        batch.status = BatchStatus.PICKED_UP;
+        batch.pickupTimestamp = block.timestamp;
+        
+        allBatchesArray[_batchId] = batch;
+        emit DistributorPickup(_batchId);
+    }
+
+    // --- FUNCTIONS (RETAILER ROLE) ---
+
+    /**
+     * @dev Retailer locks payment in the contract (Escrow).
+     */
+    function fundBatch(uint _batchId) external payable onlyRetailer(_batchId) {
+        Batch storage batch = batches[_batchId];
+        require(batch.status == BatchStatus.HARVESTED, "Batch not in HARVESTED state");
+        require(msg.value == batch.price, "Incorrect payment amount");
+        
+        batch.isFunded = true;
+        batch.status = BatchStatus.FUNDED;
+        
+        allBatchesArray[_batchId] = batch;
+        emit BatchFunded(_batchId, msg.sender, msg.value);
+    }
+
+    /**
+     * @dev Retailer confirms delivery, which pays the farmer.
+     */
+    function confirmDelivery(uint _batchId) external onlyRetailer(_batchId) {
+        Batch storage batch = batches[_batchId];
+        require(batch.status == BatchStatus.PICKED_UP, "Batch not in transit");
+        require(batch.isFunded, "Batch was not funded");
+        
+        batch.isPaid = true;
+        batch.status = BatchStatus.DELIVERED;
+        batch.deliveryTimestamp = block.timestamp;
+        
+        allBatchesArray[_batchId] = batch;
+
+        (bool success, ) = batch.farmer.call{value:batch.price}("");
+        require(success, "Payment transfer failed");
+
+        emit DeliveryConfirmed(_batchId, batch.farmer, batch.price);
+    }
+
+    /**
+     * @dev Retailer denies delivery, flagging it for the farmer.
+     * @dev This DOES NOT issue a refund. It just changes the state.
+     */
+    function denyDelivery(uint _batchId) external onlyRetailer(_batchId) {
+        Batch storage batch = batches[_batchId];
+        require(batch.status == BatchStatus.PICKED_UP, "Batch not in transit");
+        require(batch.isFunded, "Batch was not funded");
+
+        batch.status = BatchStatus.DENIED;
+        
+        allBatchesArray[_batchId] = batch;
+        emit DeliveryDenied(_batchId, msg.sender);
+    }
+
+    /**
+     * @dev Retailer "consumes" an item at the point of sale.
+     * @dev This is separate from payment.
+     */
+    function consumeItemByRetailer(bytes32 _serialHash) external {
+        Item storage item = allItems[_serialHash];
+        require(item.isRegistered, "Invalid serial");
+        
+        Batch storage batch = batches[item.batchId];
+        require(msg.sender == batch.retailer, "Only retailer can consume item");
+        require(item.status == ItemStatus.ACTIVE, "Item is not active");
+
+        item.status = ItemStatus.CONSUMED;
+        emit ItemConsumed(_serialHash);
+    }
+
+    // --- FUNCTIONS (PUBLIC) ---
+
+    // The consumer-facing functions (getHistory, getAllBatches, etc.)
+    // do not need to change from the previous version.
+    
+    // ... (Add back getHistory, activateItemsByRetailer, etc.) ...
+    
+    // NOTE: activateItemsByRetailer is still needed.
+    function activateItemsByRetailer(uint _batchId, bytes32[] calldata _itemSerialHashes) external onlyRetailer(_batchId) {
+        Batch storage batch = batches[_batchId];
+        // Can be activated once funded or picked up
+        require(batch.status == BatchStatus.FUNDED || batch.status == BatchStatus.PICKED_UP, "Batch not ready for activation");
+
+        for (uint i = 0; i < _itemSerialHashes.length; i++) {
+            bytes32 serialHash = _itemSerialHashes[i];
+            Item storage item = allItems[serialHash];
+            
+            if (item.batchId == _batchId && item.status == ItemStatus.PENDING) {
+                item.status = ItemStatus.ACTIVE;
+            }
+        }
+        // No event needed, or add one if you want
     }
     
-    function getShipment(address _sender,uint _sid) external  view returns(address,address,uint,uint,uint,uint,ShipmentStatus,bool){
-        require(_sid<=shipmentCount,"Invalid Shipment ID!");
-        require(shipments[_sender].length>0,"NO shipments under this sender");
-        typeShipment storage typeshipment = typeshipments[_sid];
-        uint _index=typeshipment.index;
-        Shipment memory shipment = shipments[_sender][_index];
-        return (shipment.sender,shipment.reciever,shipment.pickupTime,shipment.deliveryTime,shipment.price,shipment.distance,shipment.status,shipment.isPaid);
+    function getHistory(bytes32 _serialHash) external view returns (string memory verificationStatus, Batch memory batchInfo) {
+        Item storage item = allItems[_serialHash];
+
+        if (!item.isRegistered) {
+            return ("INVALID", batchInfo);
+        }
+        
+        batchInfo = batches[item.batchId];
+
+        if (item.status == ItemStatus.ACTIVE) {
+            return ("VERIFIED_ACTIVE", batchInfo);
+        } else if (item.status == ItemStatus.CONSUMED) {
+            return ("ALREADY_CONSUMED", batchInfo);
+        } else if (item.status == ItemStatus.PENDING) {
+            return ("NOT_YET_IN_STORE", batchInfo);
+        }
+
+        return ("INVALID", batchInfo); // Should be unreachable
     }
 
-    function getShipmentCount(address _sender) external view returns(uint){
-        return shipments[_sender].length;
-    }
-    function getAllTransactions() external view returns(typeShipment[] memory){
-        return typeshipments;
+    function getAllBatches() external view returns (Batch[] memory) {
+        return allBatchesArray;
     }
 }

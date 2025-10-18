@@ -3,37 +3,31 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
+				"indexed": true,
 				"internalType": "uint256",
-				"name": "SID",
+				"name": "batchId",
 				"type": "uint256"
 			},
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "sender",
+				"name": "farmer",
 				"type": "address"
 			},
 			{
-				"indexed": true,
+				"indexed": false,
 				"internalType": "address",
-				"name": "reciever",
+				"name": "retailer",
 				"type": "address"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint256",
-				"name": "distance",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
 			}
 		],
-		"name": "ShipmentCreated",
+		"name": "BatchCreated",
 		"type": "event"
 	},
 	{
@@ -41,64 +35,14 @@
 		"inputs": [
 			{
 				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "reciever",
-				"type": "address"
-			},
-			{
-				"indexed": false,
 				"internalType": "uint256",
-				"name": "deliveryTime",
+				"name": "batchId",
 				"type": "uint256"
-			}
-		],
-		"name": "ShipmentDelivered",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
 			},
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "reciever",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "pickupTime",
-				"type": "uint256"
-			}
-		],
-		"name": "ShipmentInTransit",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "reciever",
+				"name": "retailer",
 				"type": "address"
 			},
 			{
@@ -108,23 +52,118 @@
 				"type": "uint256"
 			}
 		],
-		"name": "ShipmentPaid",
+		"name": "BatchFunded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "DeliveryConfirmed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "retailer",
+				"type": "address"
+			}
+		],
+		"name": "DeliveryDenied",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "DistributorPickup",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "serialHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "ItemConsumed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "retailer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "RefundApproved",
 		"type": "event"
 	},
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_reciever",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
 			},
 			{
-				"internalType": "uint256",
-				"name": "_sid",
-				"type": "uint256"
+				"internalType": "bytes32[]",
+				"name": "_itemSerialHashes",
+				"type": "bytes32[]"
 			}
 		],
-		"name": "completeShipment",
+		"name": "activateItemsByRetailer",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -132,56 +171,379 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "approveRefund",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "confirmDelivery",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "confirmPickupByDistributor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "_serialHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "consumeItemByRetailer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_farmLocation",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_ipfsHash",
+				"type": "string"
+			},
+			{
 				"internalType": "address",
-				"name": "_reciever",
+				"name": "_distributor",
 				"type": "address"
 			},
 			{
-				"internalType": "uint256",
-				"name": "_distance",
-				"type": "uint256"
+				"internalType": "address payable",
+				"name": "_retailer",
+				"type": "address"
 			},
 			{
 				"internalType": "uint256",
 				"name": "_price",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "_itemSerialHashes",
+				"type": "bytes32[]"
 			}
 		],
-		"name": "createShipment",
+		"name": "createBatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "denyDelivery",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_batchId",
+				"type": "uint256"
+			}
+		],
+		"name": "fundBatch",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "allBatchesArray",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "farmLocation",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "ipfsHash",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "harvestTimestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address payable",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "distributor",
+				"type": "address"
+			},
+			{
+				"internalType": "address payable",
+				"name": "retailer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum AgriChainEscrow.BatchStatus",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "bool",
+				"name": "isFunded",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isPaid",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "pickupTimestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deliveryTimestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "allItems",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum AgriChainEscrow.ItemStatus",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "bool",
+				"name": "isRegistered",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "getAllTransactions",
+		"name": "batchCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "batches",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "batchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "produceName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "farmLocation",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "ipfsHash",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "harvestTimestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address payable",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "distributor",
+				"type": "address"
+			},
+			{
+				"internalType": "address payable",
+				"name": "retailer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum AgriChainEscrow.BatchStatus",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "bool",
+				"name": "isFunded",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isPaid",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "pickupTimestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deliveryTimestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllBatches",
 		"outputs": [
 			{
 				"components": [
 					{
 						"internalType": "uint256",
-						"name": "index",
+						"name": "batchId",
 						"type": "uint256"
 					},
 					{
-						"internalType": "address",
-						"name": "sender",
+						"internalType": "string",
+						"name": "produceName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "farmLocation",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "ipfsHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "harvestTimestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address payable",
+						"name": "farmer",
 						"type": "address"
 					},
 					{
 						"internalType": "address",
-						"name": "reciever",
+						"name": "distributor",
 						"type": "address"
 					},
 					{
-						"internalType": "uint256",
-						"name": "pickupTime",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "deliveryTime",
-						"type": "uint256"
+						"internalType": "address payable",
+						"name": "retailer",
+						"type": "address"
 					},
 					{
 						"internalType": "uint256",
@@ -189,22 +551,32 @@
 						"type": "uint256"
 					},
 					{
-						"internalType": "uint256",
-						"name": "distance",
-						"type": "uint256"
-					},
-					{
-						"internalType": "enum Tracking.ShipmentStatus",
+						"internalType": "enum AgriChainEscrow.BatchStatus",
 						"name": "status",
 						"type": "uint8"
 					},
 					{
 						"internalType": "bool",
+						"name": "isFunded",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
 						"name": "isPaid",
 						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pickupTimestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "deliveryTimestamp",
+						"type": "uint256"
 					}
 				],
-				"internalType": "struct Tracking.typeShipment[]",
+				"internalType": "struct AgriChainEscrow.Batch[]",
 				"name": "",
 				"type": "tuple[]"
 			}
@@ -215,166 +587,94 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_sender",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_sid",
-				"type": "uint256"
+				"internalType": "bytes32",
+				"name": "_serialHash",
+				"type": "bytes32"
 			}
 		],
-		"name": "getShipment",
+		"name": "getHistory",
 		"outputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
+				"internalType": "string",
+				"name": "verificationStatus",
+				"type": "string"
 			},
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum Tracking.ShipmentStatus",
-				"name": "",
-				"type": "uint8"
-			},
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_sender",
-				"type": "address"
-			}
-		],
-		"name": "getShipmentCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "shipmentCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_reciever",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_sid",
-				"type": "uint256"
-			}
-		],
-		"name": "startShipment",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "typeshipments",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "index",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "reciever",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "pickupTime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "deliveryTime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "distance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum Tracking.ShipmentStatus",
-				"name": "status",
-				"type": "uint8"
-			},
-			{
-				"internalType": "bool",
-				"name": "isPaid",
-				"type": "bool"
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "batchId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "produceName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "farmLocation",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "ipfsHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "harvestTimestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address payable",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "distributor",
+						"type": "address"
+					},
+					{
+						"internalType": "address payable",
+						"name": "retailer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum AgriChainEscrow.BatchStatus",
+						"name": "status",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bool",
+						"name": "isFunded",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "isPaid",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pickupTimestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "deliveryTimestamp",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct AgriChainEscrow.Batch",
+				"name": "batchInfo",
+				"type": "tuple"
 			}
 		],
 		"stateMutability": "view",
