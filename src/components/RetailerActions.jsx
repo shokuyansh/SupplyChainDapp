@@ -14,7 +14,7 @@ const hashSerials = (serials) => {
 const RetailerActions = ({ contractInstance }) => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('fund'); // 'fund', 'activate', 'confirm', 'deny', 'consume'
+  const [mode, setMode] = useState('fund'); 
 
   const batchIdRef = useRef(null);
   const priceRef = useRef(null);
